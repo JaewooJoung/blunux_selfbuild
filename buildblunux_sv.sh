@@ -4,7 +4,7 @@
 
 set -e
 
-REPO_URL="https://github.com/nidoit/blunux_selfbuild.git"
+REPO_URL="https://github.com/JaewooJoung/blunux_selfbuild.git"
 BRANCH="main"
 DIR_NAME="blunux_selfbuild"
 CONFIG_FILE="config_sv.toml"
