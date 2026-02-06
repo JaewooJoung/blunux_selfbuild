@@ -112,7 +112,7 @@ julia --version
 ### 3-1. 프로젝트 다운로드
 
 ```bash
-git clone https://github.com/nidoit/blunux_selfbuild.git
+git clone https://github.com/JaewooJoung/blunux_selfbuild.git
 ```
 
 **설명:** GitHub에서 Blunux 소스 코드를 다운로드합니다.
@@ -427,7 +427,7 @@ user_password = "나만의안전한비밀번호"
 
 ## 도움이 필요하면
 
-- **GitHub Issues:** https://github.com/nidoit/blunux_selfbuild/issues
+- **GitHub Issues:** https://github.com/JaewooJoung/blunux_selfbuild/issues
 - **버그 신고나 질문**을 올려주세요!
 
 ---
