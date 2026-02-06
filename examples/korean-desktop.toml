@@ -1,0 +1,40 @@
+# Blunux Korean Desktop Configuration
+# Generated for: https://blunux.com/builder/
+
+[blunux]
+version = "1.0"
+name = "korean-desktop"
+
+[locale]
+language = "ko_KR"
+timezone = "Asia/Seoul"
+keyboard = ["us", "kr"]
+
+[input_method]
+enabled = true
+engine = "kime"
+
+[kernel]
+type = "linux-bore"
+
+[packages.desktop]
+kde = true
+
+[packages.browser]
+firefox = true
+whale = true
+
+[packages.office]
+libreoffice = true
+hoffice = true
+
+[packages.development]
+vscode = true
+git = true
+nodejs = true
+
+[packages.multimedia]
+vlc = true
+
+[packages.utility]
+bluetooth = true

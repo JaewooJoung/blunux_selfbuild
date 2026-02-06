@@ -1,0 +1,108 @@
+# Blunux 설정 파일
+# https://blunux.com/builder/ 에서 생성됨
+
+[blunux]
+version = "1.0"
+name = "my-blunux-build"
+
+# 언어 및 지역 설정
+[locale]
+language = ["ko_KR"]            # 한국어
+timezone = "Asia/Seoul"          # 시간대: 서울
+keyboard = ["kr", "us"]         # 키보드 레이아웃: 한국어, 영어
+
+# 한글 입력기 설정
+[input_method]
+enabled = true                   # 한글 입력기 사용
+engine = "kime"                  # kime, fcitx5, ibus 중 선택
+
+# 커널 선택:
+# type = "linux"        # 기본 커널 (기본값)
+# type = "linux-lts"    # 장기 지원 커널 (안정적)
+# type = "linux-zen"    # 성능 최적화 커널 (게임/데스크톱용)
+# type = "linux-bore"   # BORE 스케줄러 커널 (AUR - 첫 부팅 후 설치)
+[kernel]
+type = "linux"
+
+# 설치 옵션
+[install]
+# 부트로더 선택:
+# bootloader = "grub"         # GRUB 부트로더 (기본값, BIOS + UEFI 지원)
+# bootloader = "systemd-boot" # systemd-boot (UEFI 전용, 가벼움)
+# bootloader = "nmbl"         # 부트로더 없음 - EFISTUB 직접 부팅 (UEFI 전용, 가장 빠름)
+bootloader = "nmbl"
+
+# 호스트 이름 (컴퓨터 이름)
+# hostname = "nux"
+
+# 사용자 계정 이름
+# username = "blu"
+
+# 비밀번호 설정 - 설치 전에 반드시 변경하세요!
+# 경고: 비밀번호가 평문으로 저장됩니다 - 설치 후 반드시 변경하세요!
+# root_password = "1234"
+# user_password = "1234"
+
+# 디스크 암호화 (true/false)
+encryption = false
+
+# 부팅 시 자동 로그인 (true/false)
+autologin = true
+
+# 데스크톱 환경
+[packages.desktop]
+kde = true                       # KDE Plasma 데스크톱
+
+# 웹 브라우저
+[packages.browser]
+firefox = true                   # 파이어폭스
+whale = false                    # 네이버 웨일
+chrome = false                   # 구글 크롬
+mullvad = false                  # Mullvad 브라우저
+
+# 오피스
+[packages.office]
+libreoffice = true               # 리브레오피스
+hoffice = false                  # 한글 오피스
+texlive = false                  # LaTeX 문서 작성 도구
+
+# 개발 도구
+[packages.development]
+vscode = true                    # VS Code 코드 편집기
+sublime = false                  # Sublime Text 편집기
+rust = true                      # Rust 프로그래밍 언어
+julia = true                     # Julia 프로그래밍 언어
+nodejs = true                    # Node.js 자바스크립트 런타임
+github_cli = false               # GitHub CLI 도구
+
+# 멀티미디어
+[packages.multimedia]
+obs = false                      # OBS 방송/녹화 프로그램
+vlc = false                      # VLC 미디어 플레이어
+freetv = false                   # FreeTuxTV TV 시청
+ytdlp = false                    # yt-dlp 동영상 다운로더
+freetube = false                 # FreeTube 유튜브 클라이언트
+
+# 게임
+[packages.gaming]
+steam = false                    # 스팀 게임 플랫폼
+unciv = false                    # UnCiv 문명 게임
+snes9x = false                   # SNES 에뮬레이터
+
+# 가상화
+[packages.virtualization]
+virtualbox = false               # VirtualBox 가상 머신
+docker = false                   # Docker 컨테이너
+
+# 커뮤니케이션
+[packages.communication]
+teams = false                    # Microsoft Teams
+whatsapp = false                 # WhatsApp 메신저
+onenote = false                  # OneNote 메모 앱
+
+# 유틸리티
+[packages.utility]
+conky = false                    # Conky 시스템 모니터
+vnc = false                      # VNC 원격 데스크톱
+samba = false                    # Samba 파일 공유
+bluetooth = true                 # 블루투스 지원

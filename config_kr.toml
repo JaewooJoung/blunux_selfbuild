@@ -1,0 +1,39 @@
+# Blunux 한국어 데스크톱 설정
+# Korean Desktop Configuration
+
+[blunux]
+version = "1.0"
+name = "blunux-korean"
+
+[locale]
+language = "ko_KR"
+timezone = "Asia/Seoul"
+keyboard = ["us", "kr"]
+
+[input_method]
+enabled = true
+engine = "kime"
+
+[kernel]
+type = "linux"
+
+[packages.desktop]
+kde = true
+
+[packages.browser]
+firefox = true
+whale = true
+
+[packages.office]
+libreoffice = true
+hoffice = true
+
+[packages.development]
+vscode = true
+git = true
+
+[packages.multimedia]
+vlc = true
+
+[packages.utility]
+bluetooth = true

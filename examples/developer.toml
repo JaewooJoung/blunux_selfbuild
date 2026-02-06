@@ -1,0 +1,40 @@
+# Blunux Developer Configuration
+# Full development environment
+
+[blunux]
+version = "1.0"
+name = "developer"
+
+[locale]
+language = "en_US"
+timezone = "America/New_York"
+keyboard = ["us"]
+
+[kernel]
+type = "linux-zen"
+
+[packages.desktop]
+kde = true
+
+[packages.browser]
+firefox = true
+chromium = true
+
+[packages.development]
+vscode = true
+neovim = true
+git = true
+rust = true
+nodejs = true
+python = true
+go = true
+docker = true
+github_cli = true
+
+[packages.virtualization]
+docker = true
+qemu = true
+
+[packages.utility]
+htop = true
+neofetch = true

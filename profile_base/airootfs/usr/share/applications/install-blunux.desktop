@@ -1,0 +1,16 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Install Blunux
+Name[ko]=Blunux 설치
+Name[sv]=Installera Blunux
+GenericName=System Installer
+GenericName[ko]=시스템 설치 프로그램
+Comment=Install Blunux to your computer
+Comment[ko]=컴퓨터에 Blunux를 설치합니다
+Comment[sv]=Installera Blunux pa din dator
+Exec=konsole -e bash /usr/local/bin/blunux-install
+Icon=system-software-install
+Terminal=false
+Categories=System;
+Keywords=install;installer;system;setup;

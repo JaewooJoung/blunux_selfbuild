@@ -1,0 +1,20 @@
+# Blunux Minimal Configuration
+# A minimal desktop setup
+
+[blunux]
+version = "1.0"
+name = "minimal"
+
+[locale]
+language = "en_US"
+timezone = "UTC"
+keyboard = ["us"]
+
+[kernel]
+type = "linux"
+
+[packages.desktop]
+kde = true
+
+[packages.browser]
+firefox = true

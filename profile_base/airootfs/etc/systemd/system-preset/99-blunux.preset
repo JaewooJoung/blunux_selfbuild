@@ -1,0 +1,9 @@
+# Blunux Live ISO service preset
+enable pacman-init.service
+enable NetworkManager.service
+enable systemd-resolved.service
+enable systemd-timesyncd.service
+enable sshd.service
+enable sddm.service
+enable bluetooth.service
+enable ModemManager.service

@@ -1,0 +1,2 @@
+# Allow live user to run any command without password
+live ALL=(ALL) NOPASSWD: ALL

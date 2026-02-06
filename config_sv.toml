@@ -1,0 +1,36 @@
+# Blunux Svenska Skrivbordskonfiguration
+# Swedish Desktop Configuration
+
+[blunux]
+version = "1.0"
+name = "blunux-swedish"
+
+[locale]
+language = "sv_SE"
+timezone = "Europe/Stockholm"
+keyboard = ["se", "us"]
+
+[input_method]
+enabled = false
+
+[kernel]
+type = "linux"
+
+[packages.desktop]
+kde = true
+
+[packages.browser]
+firefox = true
+
+[packages.office]
+libreoffice = true
+
+[packages.development]
+vscode = true
+git = true
+
+[packages.multimedia]
+vlc = true
+
+[packages.utility]
+bluetooth = true
