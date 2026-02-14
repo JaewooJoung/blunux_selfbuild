@@ -32,15 +32,15 @@ type = "linux"
 bootloader = "grub"
 
 # 호스트 이름 (컴퓨터 이름)
-hostname = "nux"
+# hostname = "nux"
 
 # 사용자 계정 이름
-username = "blu"
+# username = "blu"
 
 # 비밀번호 설정 - 설치 전에 반드시 변경하세요!
 # 경고: 비밀번호가 평문으로 저장됩니다 - 설치 후 반드시 변경하세요!
-root_password = "1234"
-user_password = "1234"
+# root_password = "1234"
+# user_password = "1234"
 
 # 디스크 암호화 (true/false)
 encryption = false
