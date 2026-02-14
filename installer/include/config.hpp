@@ -107,6 +107,10 @@ struct Config {
     PackagesConfig packages;
     InstallConfig install;
 
+    // True when config was successfully loaded from a TOML file.
+    // When true, all fields are trusted and interactive prompts are skipped.
+    bool loaded_from_file = false;
+
     // Load config from TOML file
     static Config load(const std::string& path);
 

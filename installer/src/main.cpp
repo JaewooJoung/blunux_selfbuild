@@ -86,19 +86,19 @@ Config interactive_setup(Config& cfg) {
         exit(0);
     }
 
-    // Step 2: Set hostname (skip if already configured)
-    if (cfg.install.hostname.empty() || cfg.install.hostname == "blunux") {
+    // Step 2: Set hostname (skip if loaded from config.toml)
+    if (cfg.loaded_from_file && !cfg.install.hostname.empty()) {
+        tui::print_info("Hostname: " + cfg.install.hostname + " (from config.toml)");
+    } else {
         std::cout << "\n";
         cfg.install.hostname = tui::input("Hostname / 호스트명", cfg.install.hostname.empty() ? "blunux" : cfg.install.hostname);
-    } else {
-        tui::print_info("Hostname: " + cfg.install.hostname + " (from config.toml)");
     }
 
-    // Step 3: Set username (skip if already configured)
-    if (cfg.install.username.empty() || cfg.install.username == "user") {
-        cfg.install.username = tui::input("Username / 사용자명", cfg.install.username.empty() ? "user" : cfg.install.username);
-    } else {
+    // Step 3: Set username (skip if loaded from config.toml)
+    if (cfg.loaded_from_file && !cfg.install.username.empty()) {
         tui::print_info("Username: " + cfg.install.username + " (from config.toml)");
+    } else {
+        cfg.install.username = tui::input("Username / 사용자명", cfg.install.username.empty() ? "user" : cfg.install.username);
     }
 
     // Step 4: Set passwords (skip if already configured in config.toml)
@@ -128,8 +128,8 @@ Config interactive_setup(Config& cfg) {
         tui::print_info("Passwords: configured (from config.toml)");
     }
 
-    // Step 5: Timezone selection (skip if already configured)
-    if (cfg.locale.timezone.empty() || cfg.locale.timezone == "UTC") {
+    // Step 5: Timezone selection (skip if loaded from config.toml)
+    if (!cfg.loaded_from_file && (cfg.locale.timezone.empty() || cfg.locale.timezone == "UTC")) {
         std::cout << "\n";
         std::vector<std::string> tz_options = {
             "Asia/Seoul",
@@ -147,8 +147,8 @@ Config interactive_setup(Config& cfg) {
         tui::print_info("Timezone: " + cfg.locale.timezone + " (from config.toml)");
     }
 
-    // Step 6: Keyboard layout (skip if already configured)
-    if (cfg.locale.keyboards.empty()) {
+    // Step 6: Keyboard layout (skip if loaded from config.toml)
+    if (!cfg.loaded_from_file && cfg.locale.keyboards.empty()) {
         std::cout << "\n";
         std::vector<std::string> kb_options = {
             "us - US English",
@@ -166,9 +166,8 @@ Config interactive_setup(Config& cfg) {
         tui::print_info("Keyboard: " + cfg.locale.keyboards[0] + " (from config.toml)");
     }
 
-    // Step 7: Kernel selection (skip if already configured to non-default)
-    // If kernel is set to anything other than empty or default "linux", use config.toml value
-    bool kernel_is_configured = !cfg.kernel.type.empty() && cfg.kernel.type != "linux";
+    // Step 7: Kernel selection (skip if loaded from config.toml)
+    bool kernel_is_configured = cfg.loaded_from_file && !cfg.kernel.type.empty();
     if (!kernel_is_configured) {
         std::cout << "\n";
         std::vector<std::string> kernel_options = {
@@ -209,7 +208,7 @@ Config interactive_setup(Config& cfg) {
         return false;
     };
     bool is_cjk_locale = has_lang("ko") || has_lang("ja") || has_lang("zh");
-    bool im_already_configured = !cfg.input_method.engine.empty();
+    bool im_already_configured = cfg.loaded_from_file && !cfg.input_method.engine.empty();
 
     if (is_cjk_locale && !im_already_configured) {
         std::cout << "\n";

@@ -180,6 +180,7 @@ Config Config::load(const std::string& path) {
         throw;
     }
 
+    cfg.loaded_from_file = true;
     return cfg;
 }
 

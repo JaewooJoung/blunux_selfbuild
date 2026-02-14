@@ -1,14 +1,14 @@
-# Blunux 설정 파일
+# Blunux2 설정 파일
 # https://blunux.com/builder/ 에서 생성됨
 
 [blunux]
-version = "1.0"
+version = "2.0"
 name = "my-blunux-build"
 
 # 언어 및 지역 설정
 [locale]
 language = ["ko_KR"]            # 한국어
-timezone = "Asia/Seoul"          # 시간대: 서울
+timezone = "Europe/Stockholm"
 keyboard = ["kr", "us"]         # 키보드 레이아웃: 한국어, 영어
 
 # 한글 입력기 설정
@@ -20,7 +20,6 @@ engine = "kime"                  # kime, fcitx5, ibus 중 선택
 # type = "linux"        # 기본 커널 (기본값)
 # type = "linux-lts"    # 장기 지원 커널 (안정적)
 # type = "linux-zen"    # 성능 최적화 커널 (게임/데스크톱용)
-# type = "linux-bore"   # BORE 스케줄러 커널 (AUR - 첫 부팅 후 설치)
 [kernel]
 type = "linux"
 
@@ -30,24 +29,33 @@ type = "linux"
 # bootloader = "grub"         # GRUB 부트로더 (기본값, BIOS + UEFI 지원)
 # bootloader = "systemd-boot" # systemd-boot (UEFI 전용, 가벼움)
 # bootloader = "nmbl"         # 부트로더 없음 - EFISTUB 직접 부팅 (UEFI 전용, 가장 빠름)
-bootloader = "nmbl"
+bootloader = "grub"
 
 # 호스트 이름 (컴퓨터 이름)
-# hostname = "nux"
+hostname = "nux"
 
 # 사용자 계정 이름
-# username = "blu"
+username = "blu"
 
 # 비밀번호 설정 - 설치 전에 반드시 변경하세요!
 # 경고: 비밀번호가 평문으로 저장됩니다 - 설치 후 반드시 변경하세요!
-# root_password = "1234"
-# user_password = "1234"
+root_password = "1234"
+user_password = "1234"
 
 # 디스크 암호화 (true/false)
 encryption = false
 
 # 부팅 시 자동 로그인 (true/false)
 autologin = true
+
+# 디스크 설정
+[disk]
+# 스왑 공간 선택:
+# swap = "none"       # 스왑 없음
+# swap = "small"      # 작은 스왑 (RAM 크기의 절반, 가벼운 사용)
+# swap = "suspend"    # 최대 절전용 스왑 (RAM과 같은 크기)
+# swap = "file"       # 스왑 파일 (파티션 대신 파일 사용)
+swap = "suspend"
 
 # 데스크톱 환경
 [packages.desktop]

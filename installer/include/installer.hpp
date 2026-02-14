@@ -31,6 +31,9 @@ public:
     bool configure_input_method();
     bool finalize();
 
+    // Detect hardware and install appropriate GPU/WiFi drivers
+    void detect_and_install_drivers();
+
     // Get error message if installation failed
     std::string get_error() const { return error_message_; }
 

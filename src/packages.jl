@@ -192,6 +192,12 @@ const BASE_PACKAGES = [
     "base-devel",
     "linux-firmware",
     "networkmanager",
+    # WiFi support (wpa_supplicant is the default backend for NetworkManager WiFi)
+    "wpa_supplicant",
+    "iwd",                       # Modern WiFi daemon (provides iwctl)
+    "wireless_tools",            # Classic WiFi utilities (iwconfig, iwlist)
+    "wireless-regdb",            # Wireless regulatory domain database (required for proper WiFi)
+    "dhcpcd",                    # DHCP client (fallback network)
     "nano",
     "vim",
     "sudo",
@@ -204,6 +210,7 @@ const BASE_PACKAGES = [
     "grub",
     "efibootmgr",
     "os-prober",
+    "syslinux",                  # BIOS boot (provides ldlinux.c32, isolinux.bin for ISO)
     # Filesystem
     "ntfs-3g",
     "dosfstools",

@@ -1,27 +1,52 @@
 #┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
 #┃ 📁File      📄 installer_build.jl                                                 ┃
-#┃ 📙Brief     📝 C++ Installer Build Module for Blunux Self-Build                   ┃
-#┃ 🧾Details   🔎 Compiles the blunux-installer C++ CLI tool                         ┃
+#┃ 📙Brief     📝 Rust Installer Build Module for Blunux Self-Build                  ┃
+#┃ 🧾Details   🔎 Compiles the blunux-installer Rust CLI tool                        ┃
 #┃ 🚩OAuthor   🦋 Blunux Project                                                    ┃
 #┃ 👨‍🔧LAuthor   👤 Blunux Project                                                    ┃
-#┃ 📆LastDate  📍 2026-01-29 🔄Please support to keep update🔄                      ┃
+#┃ 📆LastDate  📍 2026-02-13 🔄Please support to keep update🔄                      ┃
 #┃ 🏭License   📜 MIT License                                                       ┃
 #┃ ✅Guarantee ⚠️ Explicitly UN-guaranteed                                          ┃
 #┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 #=
 Installer Build Module for Blunux Self-Build Tool
 
-Handles compilation of the C++ CLI installer using CMake.
+Handles compilation of the Rust CLI installer using cargo.
+Falls back to legacy C++ build via CMake if Rust toolchain is unavailable.
 The compiled installer is placed in the LiveOS for use during installation.
+
+Priority: Julia → Rust → C (Rust replaces the former C++ installer)
 =#
 
 """
     check_build_requirements()
 
-Check if required build tools are available (cmake, g++).
-Returns true if all requirements are met.
+Check if Rust build tools are available (cargo, rustc).
+Returns true if Rust requirements are met.
 """
 function check_build_requirements()
+    requirements = [
+        ("cargo", "rustup or rust package"),
+        ("rustc", "rustup or rust package")
+    ]
+
+    all_met = true
+    for (cmd, pkg) in requirements
+        if !success(`which $cmd`)
+            println("    $(RED)[✗]$(RESET) $cmd not found - install $pkg")
+            all_met = false
+        end
+    end
+
+    return all_met
+end
+
+"""
+    check_legacy_build_requirements()
+
+Check if C++ build tools are available (cmake, g++) as fallback.
+"""
+function check_legacy_build_requirements()
     requirements = [
         ("cmake", "cmake"),
         ("g++", "gcc")
@@ -41,48 +66,105 @@ end
 """
     build_installer(installer_dir::String, build_type::String="Release")
 
-Build the C++ installer using CMake.
+Build the Rust installer using cargo.
+Falls back to C++ build via CMake if Rust toolchain is not available.
 Returns the path to the compiled binary, or nothing on failure.
 
 # Arguments
-- `installer_dir`: Path to the installer source directory
-- `build_type`: CMake build type ("Release" or "Debug")
+- `installer_dir`: Path to the installer-rs/ directory (or installer/ for legacy)
+- `build_type`: Build type ("Release" or "Debug")
 """
 function build_installer(installer_dir::String, build_type::String="Release")
-    build_dir = joinpath(installer_dir, "build")
+    # Try Rust build first (primary)
+    if isfile(joinpath(installer_dir, "Cargo.toml"))
+        return build_rust_installer(installer_dir, build_type)
+    end
 
-    # Check requirements
+    # Fallback: try legacy C++ build
+    legacy_dir = replace(installer_dir, "installer-rs" => "installer")
+    if isdir(legacy_dir) && isfile(joinpath(legacy_dir, "CMakeLists.txt"))
+        println("    $(YELLOW)[!]$(RESET) Rust source not found, falling back to legacy C++ build")
+        return build_cpp_installer(legacy_dir, build_type)
+    end
+
+    println("    $(RED)[✗]$(RESET) No installer source found")
+    return nothing
+end
+
+"""
+    build_rust_installer(rust_dir::String, build_type::String="Release")
+
+Build the Rust installer using cargo.
+"""
+function build_rust_installer(rust_dir::String, build_type::String="Release")
     if !check_build_requirements()
-        println("    $(YELLOW)[!]$(RESET) Skipping installer build - missing requirements")
+        println("    $(YELLOW)[!]$(RESET) Skipping Rust installer build - missing cargo/rustc")
         return nothing
     end
 
-    # Create build directory
+    println("    Building Rust installer with cargo...")
+
+    try
+        if build_type == "Release"
+            run(Cmd(`cargo build --release`, dir=rust_dir))
+        else
+            run(Cmd(`cargo build`, dir=rust_dir))
+        end
+    catch e
+        println("    $(RED)[✗]$(RESET) Cargo build failed: $e")
+        return nothing
+    end
+
+    # Find the compiled binary
+    if build_type == "Release"
+        binary_path = joinpath(rust_dir, "target", "release", "blunux-installer")
+    else
+        binary_path = joinpath(rust_dir, "target", "debug", "blunux-installer")
+    end
+
+    if isfile(binary_path)
+        println("    $(GREEN)[✓]$(RESET) Rust installer built successfully: $binary_path")
+        return binary_path
+    else
+        println("    $(RED)[✗]$(RESET) Binary not found at: $binary_path")
+        return nothing
+    end
+end
+
+"""
+    build_cpp_installer(cpp_dir::String, build_type::String="Release")
+
+Legacy: Build the C++ installer using CMake (fallback only).
+"""
+function build_cpp_installer(cpp_dir::String, build_type::String="Release")
+    if !check_legacy_build_requirements()
+        println("    $(YELLOW)[!]$(RESET) Skipping C++ installer build - missing cmake/g++")
+        return nothing
+    end
+
+    build_dir = joinpath(cpp_dir, "build")
     mkpath(build_dir)
 
-    println("    Configuring CMake...")
+    println("    Configuring CMake (legacy C++ build)...")
     try
-        # Run cmake configure
-        run(Cmd(`cmake -S $installer_dir -B $build_dir -DCMAKE_BUILD_TYPE=$build_type`,
-                dir=installer_dir))
+        run(Cmd(`cmake -S $cpp_dir -B $build_dir -DCMAKE_BUILD_TYPE=$build_type`,
+                dir=cpp_dir))
     catch e
         println("    $(RED)[✗]$(RESET) CMake configuration failed: $e")
         return nothing
     end
 
-    println("    Compiling installer...")
+    println("    Compiling C++ installer...")
     try
-        # Run cmake build
-        run(Cmd(`cmake --build $build_dir --parallel`, dir=installer_dir))
+        run(Cmd(`cmake --build $build_dir --parallel`, dir=cpp_dir))
     catch e
         println("    $(RED)[✗]$(RESET) Compilation failed: $e")
         return nothing
     end
 
-    # Find the compiled binary
     binary_path = joinpath(build_dir, "blunux-installer")
     if isfile(binary_path)
-        println("    $(GREEN)[✓]$(RESET) Installer built successfully: $binary_path")
+        println("    $(GREEN)[✓]$(RESET) C++ installer built successfully: $binary_path")
         return binary_path
     else
         println("    $(RED)[✗]$(RESET) Binary not found at: $binary_path")
@@ -145,7 +227,7 @@ end
 """
     update_install_script_for_installer(profile_dir::String)
 
-Update the blunux-install script to use the C++ installer instead of archinstall.
+Update the blunux-install script to use the Rust installer instead of archinstall.
 """
 function update_install_script_for_installer(profile_dir::String)
     airootfs_dir = joinpath(profile_dir, "airootfs")
@@ -157,7 +239,7 @@ function update_install_script_for_installer(profile_dir::String)
     open(install_script, "w") do f
         print(f, raw"""#!/bin/bash
 # Blunux Install Script
-# Launches the Blunux C++ Installer
+# Launches the Blunux Rust Installer
 
 GREEN='\033[1;32m'
 RED='\033[1;31m'
@@ -665,6 +747,13 @@ copy_blunux_osrelease() {
         mkdir -p "$mount_point/usr/lib"
         cp /etc/os-release "$mount_point/usr/lib/os-release"
 
+        # Copy Blunux logo icon (used by KDE "About This System" via LOGO= in os-release)
+        if [ -f /usr/share/pixmaps/blunux.png ]; then
+            mkdir -p "$mount_point/usr/share/pixmaps"
+            cp /usr/share/pixmaps/blunux.png "$mount_point/usr/share/pixmaps/blunux.png"
+            echo -e "${GREEN}[완료]${RESET} Blunux 로고 아이콘 복사 완료"
+        fi
+
         echo -e "${GREEN}[완료]${RESET} OS 브랜딩 (os-release) 복사 완료"
     else
         echo -e "${YELLOW}[경고]${RESET} /etc/os-release를 찾을 수 없습니다"
@@ -673,7 +762,7 @@ copy_blunux_osrelease() {
 
 # Check if blunux-installer exists, otherwise fall back to archinstall
 if [ -x /usr/local/bin/blunux-installer ]; then
-    # Use the C++ installer with config file if available
+    # Use the Rust installer with config file if available
     if [ -f /etc/blunux/config.toml ]; then
         sudo /usr/local/bin/blunux-installer /etc/blunux/config.toml
     else
@@ -736,5 +825,5 @@ fi
     end
 
     chmod(install_script, 0o755)
-    println("    Updated blunux-install script to use C++ installer")
+    println("    Updated blunux-install script to use Rust installer")
 end

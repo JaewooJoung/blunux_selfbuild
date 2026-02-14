@@ -90,6 +90,10 @@ std::vector<std::string> Installer::get_base_packages() const {
         "vim",
         "networkmanager",
         "network-manager-applet",
+        // WiFi support (wpa_supplicant is required by NetworkManager for WiFi)
+        "wpa_supplicant",
+        "iwd",
+        "wireless_tools",
 
         // Bootloader
         "efibootmgr",
@@ -102,6 +106,16 @@ std::vector<std::string> Installer::get_base_packages() const {
         // Hardware support
         "intel-ucode",
         "amd-ucode",
+
+        // GPU base drivers (always needed)
+        "mesa",
+        "vulkan-icd-loader",
+
+        // Hardware detection
+        "pciutils",
+
+        // Console font (required by systemd-vconsole-setup.service)
+        "terminus-font",
 
         // Fonts (base)
         "noto-fonts",
@@ -262,7 +276,7 @@ std::vector<std::string> Installer::get_input_method_packages() const {
 }
 
 bool Installer::install() {
-    const int total_steps = 9;
+    const int total_steps = 10;
 
     // Step 1: Prepare disk
     report_progress(1, total_steps, "Preparing disk / 디스크 준비 중...");
@@ -289,14 +303,18 @@ bool Installer::install() {
         return false;
     }
 
-    // Step 5: Install packages
-    report_progress(5, total_steps, "Installing packages / 패키지 설치 중...");
+    // Step 5: Detect and install hardware drivers
+    report_progress(5, total_steps, "Detecting hardware drivers / 하드웨어 드라이버 감지 중...");
+    detect_and_install_drivers();
+
+    // Step 6: Install packages
+    report_progress(6, total_steps, "Installing packages / 패키지 설치 중...");
     if (!install_packages()) {
         return false;
     }
 
-    // Step 6: Configure locale and input method
-    report_progress(6, total_steps, "Configuring locale / 로케일 설정 중...");
+    // Step 7: Configure locale and input method
+    report_progress(7, total_steps, "Configuring locale / 로케일 설정 중...");
     if (!configure_locale()) {
         return false;
     }
@@ -304,20 +322,20 @@ bool Installer::install() {
         return false;
     }
 
-    // Step 7: Configure users
-    report_progress(7, total_steps, "Configuring users / 사용자 설정 중...");
+    // Step 8: Configure users
+    report_progress(8, total_steps, "Configuring users / 사용자 설정 중...");
     if (!configure_users()) {
         return false;
     }
 
-    // Step 8: Install bootloader
-    report_progress(8, total_steps, "Installing bootloader / 부트로더 설치 중...");
+    // Step 9: Install bootloader
+    report_progress(9, total_steps, "Installing bootloader / 부트로더 설치 중...");
     if (!install_bootloader()) {
         return false;
     }
 
-    // Step 9: Finalize
-    report_progress(9, total_steps, "Finalizing / 마무리 중...");
+    // Step 10: Finalize
+    report_progress(10, total_steps, "Finalizing / 마무리 중...");
     if (!finalize()) {
         return false;
     }
@@ -436,6 +454,117 @@ bool Installer::install_packages() {
     return true;
 }
 
+void Installer::detect_and_install_drivers() {
+    // Read lspci output from the host (hardware is the same)
+    std::string lspci_output = exec("lspci -nn 2>/dev/null");
+
+    // Convert to lowercase for matching
+    std::string lspci_lower = lspci_output;
+    std::transform(lspci_lower.begin(), lspci_lower.end(), lspci_lower.begin(), ::tolower);
+
+    std::vector<std::string> driver_packages;
+
+    // ── GPU Detection ──────────────────────────────────────
+    bool has_nvidia = lspci_lower.find("nvidia") != std::string::npos;
+    bool has_amd_gpu = lspci_lower.find("[amd/ati]") != std::string::npos
+        || lspci_lower.find("radeon") != std::string::npos
+        || (lspci_lower.find("amd") != std::string::npos
+            && lspci_lower.find("vga") != std::string::npos);
+    bool has_intel_gpu = lspci_lower.find("intel") != std::string::npos
+        && (lspci_lower.find("vga") != std::string::npos
+            || lspci_lower.find("display") != std::string::npos);
+
+    if (has_nvidia) {
+        tui::print_info("Detected NVIDIA GPU - installing drivers...");
+        driver_packages.insert(driver_packages.end(), {
+            "nvidia", "nvidia-utils", "nvidia-settings",
+            "lib32-nvidia-utils", "libva-nvidia-driver"
+        });
+    }
+
+    if (has_amd_gpu) {
+        tui::print_info("Detected AMD/ATI GPU - installing drivers...");
+        driver_packages.insert(driver_packages.end(), {
+            "xf86-video-amdgpu", "vulkan-radeon", "lib32-vulkan-radeon",
+            "libva-mesa-driver", "lib32-libva-mesa-driver", "mesa-vdpau"
+        });
+    }
+
+    if (has_intel_gpu) {
+        tui::print_info("Detected Intel GPU - installing drivers...");
+        driver_packages.insert(driver_packages.end(), {
+            "vulkan-intel", "lib32-vulkan-intel", "intel-media-driver"
+        });
+    }
+
+    if (!has_nvidia && !has_amd_gpu && !has_intel_gpu) {
+        tui::print_info("No dedicated GPU detected - using mesa software rendering");
+    }
+
+    // ── WiFi / Network Detection ───────────────────────────
+    bool has_broadcom = lspci_lower.find("broadcom") != std::string::npos
+        && (lspci_lower.find("wireless") != std::string::npos
+            || lspci_lower.find("network") != std::string::npos
+            || lspci_lower.find("bcm43") != std::string::npos);
+
+    if (has_broadcom) {
+        tui::print_info("Detected Broadcom wireless - installing driver...");
+        driver_packages.push_back("broadcom-wl-dkms");
+    }
+
+    bool has_realtek_wifi = lspci_lower.find("realtek") != std::string::npos
+        && (lspci_lower.find("wireless") != std::string::npos
+            || lspci_lower.find("rtl8") != std::string::npos);
+
+    if (has_realtek_wifi) {
+        tui::print_info("Detected Realtek wireless - linux-firmware should cover it");
+        // Most Realtek chips are covered by linux-firmware
+        // rtw88/rtw89 drivers are in-kernel since linux 6.x
+    }
+
+    // ── Install detected driver packages ───────────────────
+    if (!driver_packages.empty()) {
+        std::string pkg_list;
+        for (const auto& pkg : driver_packages) {
+            pkg_list += " " + pkg;
+        }
+        tui::print_info("Installing hardware drivers: " + std::to_string(driver_packages.size()) + " packages");
+
+        // Install via pacman in chroot
+        if (run_chroot("pacman -S --noconfirm --needed" + pkg_list)) {
+            tui::print_success("Hardware drivers installed successfully");
+        } else {
+            tui::print_warning("Some driver packages may have failed - system should still work");
+        }
+    } else {
+        tui::print_success("Base GPU drivers (mesa) already included");
+    }
+
+    // ── Enable multilib repository for 32-bit libs ─────────
+    bool has_32bit = false;
+    for (const auto& pkg : driver_packages) {
+        if (pkg.substr(0, 6) == "lib32-") {
+            has_32bit = true;
+            break;
+        }
+    }
+    if (has_32bit) {
+        tui::print_info("Enabling multilib repository for 32-bit driver support...");
+        run_chroot("sed -i '/^#\\[multilib\\]/,/^#Include/ s/^#//' /etc/pacman.conf");
+        run_chroot("pacman -Sy --noconfirm");
+        // Retry 32-bit packages after enabling multilib
+        std::string lib32_list;
+        for (const auto& pkg : driver_packages) {
+            if (pkg.substr(0, 6) == "lib32-") {
+                lib32_list += " " + pkg;
+            }
+        }
+        if (!lib32_list.empty()) {
+            run_chroot("pacman -S --noconfirm --needed" + lib32_list);
+        }
+    }
+}
+
 bool Installer::configure_locale() {
     // Configure locale.gen - add all configured languages
     std::string locale_gen_path = mount_point_ + "/etc/locale.gen";
@@ -457,11 +586,11 @@ bool Installer::configure_locale() {
     std::string locale_conf = "LANG=" + default_lang + ".UTF-8\n";
     write_file(mount_point_ + "/etc/locale.conf", locale_conf);
 
-    // Configure keyboard
-    if (!config_.locale.keyboards.empty()) {
-        std::string vconsole = "KEYMAP=" + config_.locale.keyboards[0] + "\n";
-        write_file(mount_point_ + "/etc/vconsole.conf", vconsole);
-    }
+    // Always write vconsole.conf with KEYMAP and FONT
+    // Missing FONT causes systemd-vconsole-setup.service to fail at boot
+    std::string keymap = config_.locale.keyboards.empty() ? "us" : config_.locale.keyboards[0];
+    std::string vconsole = "KEYMAP=" + keymap + "\nFONT=ter-v16n\n";
+    write_file(mount_point_ + "/etc/vconsole.conf", vconsole);
 
     return true;
 }
