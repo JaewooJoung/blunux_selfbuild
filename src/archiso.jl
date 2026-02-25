@@ -590,6 +590,7 @@ function configure_desktop_autologin(profile_dir, desktop)
     # Create group file addition
     group_file = joinpath(passwd_dir, "group")
     open(group_file, "a") do f
+        println(f, "autologin:x:999:live")
         println(f, "live:x:1000:")
     end
 
@@ -1056,30 +1057,28 @@ LOGO=blunux
         blue = "$(esc)[1;34m"
         white = "$(esc)[1;37m"
         reset = "$(esc)[0m"
-        print(f, """               $(blue).88888888$(white):.$(reset)
-              $(blue)88888888$(reset).$(blue)88888$(reset).
-            $(blue)888888888888888888$(reset)
-            $(blue)88$(reset)' _\`$(blue)88$(reset)'_  \`$(blue)88888$(reset)
-            $(blue)88 88 88 88  88888$(reset)
-            $(blue)88$(reset)_$(blue)88$(reset)_$(white)::$(reset)_$(blue)88$(reset)_$(white):$(blue)88888$(reset)
-            $(blue)88$(white):::,::,:::::$(blue)8888$(reset)
-            $(blue)88$(reset)\`$(white)::::::::'$(reset)\`$(blue)8888$(reset)
-           .$(blue)88$(reset)  \`$(white)::::'$(reset)    $(blue)8$(white):$(blue)88$(reset).
-          $(blue)8888$(reset)            \`$(blue)8$(white):$(blue)888$(reset).
-        .$(blue)8888$(reset)'             \`$(blue)888888$(reset).
-       .$(blue)8888$(white):..  .::.  ...:$(reset)'$(blue)8888888$(white):.$(reset)
-      .$(blue)8888$(reset).'     $(white):'$(reset)     \`'$(white)::$(reset)\`$(blue)88$(white):$(blue)88888$(reset)
-     .$(blue)8888$(reset)         '          \`.$(blue)888$(white):$(blue)8888$(reset).
-    $(blue)888$(white):$(blue)8$(reset)          .           $(blue)888$(white):$(blue)88888$(reset)
-  $(blue)8888888$(reset).        $(white)::$(reset)           $(blue)88$(white):$(blue)888888$(reset)
-  \`.$(white)::$(reset).$(blue)888$(reset).       $(white)::$(reset)          .$(blue)88888888$(reset)
- .$(white)::::::$(reset).$(blue)888$(reset).     $(white)::$(reset)          $(white):::$(reset)\`$(blue)8888$(reset)'.$(white):.$(reset)
- $(white)::::::::::$(reset).$(blue)888$(reset)    '          .$(white)::::::::::::$(reset)
- $(white)::::::::::::$(reset).$(blue)8$(reset)    '        .$(white):8:::::::::::::.$(reset)
-.$(white):::::::::::::::.$(reset)         .$(white):888:::::::::::::$(reset)
- $(white):::::::::::::::88$(reset):.__..:$(white)88888:::::::::::'$(reset)
-  \`'.$(white):::::::::::88888888888.88::::::::'$(reset)
-        \`'$(white):::_:'$(reset) -- '' -'-' \`'$(white):_::::'$(reset)
+        print(f, """        $(blue)j-_-_+~--$(reset)         
+      $(blue)@WO$(reset))$(blue)rdWBMOOM$(reset)\$       
+      $(blue)Wpv#MW$(reset)   $(blue)BMwhW$(reset)      
+    $(blue)@  BkB$(reset)      $(blue):p1W$(reset)      
+     $(blue)@ Bl$(reset)   $(white)NX$(reset)   $(blue)@a@$(reset)      
+     $(blue)##BWW@$(reset)      $(blue)@w@$(reset)      
+       $(white)'+$(reset)       $(blue)O\$m\$#$(reset)     
+     $(blue)BB$(reset)   $(blue)^;$(reset)  $(blue)@@@ft(k\$$(reset)    
+   $(blue)@@$(reset)           $(blue)*zcnna$(reset)$(blue)#$(reset)   
+   $(blue)B$(reset)        $(blue)#$(reset)    $(blue)Bvznza$(reset)\$  
+  $(blue)@$(reset)}             $(blue)WbvvzX$(reset)$(blue)B$(reset)  
+ $(blue)"@$(reset)              $(blue),}zznjM$(reset)  
+ $(blue)v@$(reset)              $(blue){YYJv($(reset)$(blue)@$(reset)) 
+$(blue)- @$(reset)              $(blue){zQvv-$(reset)$(blue)@M$(reset) 
+$(blue)- @$(reset)              $(blue)Xv*Yv-$(reset)$(blue)@#$(reset) 
+ $(blue)Z@$(reset)               $(blue){^x/-$(reset)$(blue)@W$(reset) 
+ $(blue)M X$(reset)              $(blue)j$(reset) $(blue)@:-M$(reset)  
+    $(blue)\$~$(reset)           $(blue)Z$(reset)  $(blue)BaB@$(reset)  
+     $(blue)~---/Q0Zvt)--;Wp)1M*-$(reset)
+   $(blue)nnnnnnn-!-0Ynnnnnnn$(reset) 
+$(white)uuuuuuuuuuuuuuuuuuuuuuuuuuuu$(reset) 
+$(white)uuuuuuuuuuuuuuuuuuuuuuuuuuuu$(reset) 
 """)
     end
 

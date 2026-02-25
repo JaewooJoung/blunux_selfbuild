@@ -6,6 +6,20 @@ use std::io::Write;
 use std::path::Path;
 use std::process::Command;
 
+/// Map X11 keyboard layout names to Linux console (kbd) keymap names.
+/// Layouts not listed here are assumed to match their X11 name.
+fn console_keymap(x11_layout: &str) -> &str {
+    match x11_layout {
+        "kr" => "us",        // Korean uses US QWERTY at console level; Hangul via input method
+        "cn" => "us",        // Chinese uses US QWERTY at console level
+        "tw" => "us",        // Taiwanese uses US QWERTY at console level
+        "jp" => "jp106",     // Japanese console keymap
+        "latam" => "la-latin1", // Latin American
+        "gb" => "uk",        // British English
+        other => other,
+    }
+}
+
 pub struct Installer {
     config: Config,
     error_message: String,
@@ -748,14 +762,16 @@ nameserver 1.1.1.1\n";
         );
 
         // Always write vconsole.conf with KEYMAP and FONT
+        // Map X11 layout to console keymap (e.g. "kr" -> "us")
         // Missing FONT causes systemd-vconsole-setup.service to fail at boot
-        let keymap = self
+        let x11_keymap = self
             .config
             .locale
             .keyboards
             .first()
-            .cloned()
-            .unwrap_or_else(|| "us".to_string());
+            .map(|s| s.as_str())
+            .unwrap_or("us");
+        let keymap = console_keymap(x11_keymap);
         let vconsole = format!("KEYMAP={keymap}\nFONT=ter-v16n\n");
         self.write_file(
             &format!("{}/etc/vconsole.conf", self.mount_point),
@@ -812,6 +828,13 @@ nameserver 1.1.1.1\n";
 
         // Configure SDDM autologin
         if self.config.install.autologin {
+            // Create autologin group and add user to it (required by PAM for SDDM autologin)
+            self.run_chroot("groupadd -rf autologin");
+            self.run_chroot(&format!(
+                "usermod -aG autologin {}",
+                self.config.install.username
+            ));
+
             let sddm_conf_dir = format!("{}/etc/sddm.conf.d", self.mount_point);
             self.run_command(&format!("mkdir -p {sddm_conf_dir}"));
 
@@ -1232,7 +1255,26 @@ julia "$SYSCHK_FILE"
             tui::print_info("Created ~/syschk.sh - system check script");
         }
 
-        // 6. Configure kime input method
+        // 6. Create Easy Install App desktop shortcut
+        {
+            let desktop_dir = format!("{user_home}/Desktop");
+            self.run_command(&format!("mkdir -p {desktop_dir}"));
+
+            let appinst_desktop = "[Desktop Entry]\n\
+                                   Type=Application\n\
+                                   Name=Easy Install App\n\
+                                   Comment=Install additional Blunux apps easily\n\
+                                   Exec=sh -c 'curl -fsSL https://raw.githubusercontent.com/JaewooJoung/linux/main/blunux-appinst.run -o /tmp/blunux-appinst.run && chmod +x /tmp/blunux-appinst.run && sudo /tmp/blunux-appinst.run'\n\
+                                   Icon=system-software-install\n\
+                                   Terminal=true\n\
+                                   Categories=System;PackageManager;\n";
+            let desktop_file_path = format!("{desktop_dir}/blunux-appinst.desktop");
+            self.write_file(&desktop_file_path, appinst_desktop);
+            self.run_command(&format!("chmod +x {desktop_file_path}"));
+            tui::print_info("Created Desktop shortcut: Easy Install App");
+        }
+
+        // 7. Configure kime input method
         if self.config.input_method.enabled && self.config.input_method.engine == "kime" {
             tui::print_info("Configuring kime input method...");
 

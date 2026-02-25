@@ -359,6 +359,11 @@ impl Config {
 
         let mut cfg = Config::default();
 
+        // Clear defaults for fields that have interactive prompts.
+        // This lets us detect whether the config file actually specified them.
+        cfg.install.hostname = String::new();
+        cfg.install.username = String::new();
+
         // [blunux] section
         if let Some(b) = toml_root.blunux {
             if let Some(v) = b.version {

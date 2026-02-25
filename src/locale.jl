@@ -15,6 +15,28 @@ Handles locale, timezone, and keyboard configuration.
 =#
 
 """
+Map X11 keyboard layout names to Linux console (kbd) keymap names.
+Layouts not listed here are assumed to match their X11 name.
+"""
+const X11_TO_CONSOLE_KEYMAP = Dict(
+    "kr"    => "us",       # Korean uses US QWERTY at console level; Hangul via input method
+    "cn"    => "us",       # Chinese uses US QWERTY at console level
+    "tw"    => "us",       # Taiwanese uses US QWERTY at console level
+    "jp"    => "jp106",    # Japanese console keymap
+    "latam" => "la-latin1",# Latin American
+    "gb"    => "uk",       # British English
+)
+
+"""
+    console_keymap(x11_layout)
+
+Convert an X11 keyboard layout name to a valid Linux console keymap name.
+"""
+function console_keymap(x11_layout)
+    return get(X11_TO_CONSOLE_KEYMAP, x11_layout, x11_layout)
+end
+
+"""
 Common locale to encoding mapping.
 """
 const LOCALE_ENCODINGS = Dict(
@@ -144,11 +166,15 @@ XKBEOF
 echo 'EndSection' >> /etc/X11/xorg.conf.d/00-keyboard.conf
 """)
 
-        # Console keyboard configuration
+        # Console keyboard configuration (map X11 layout to console keymap)
+        ckeymap = console_keymap(keyboards[1])
         print(f, """
 
-# Set console keyboard layout
-echo "KEYMAP=$(keyboards[1])" > /etc/vconsole.conf
+# Set console keyboard layout and font
+cat > /etc/vconsole.conf << 'VCEOF'
+KEYMAP=$ckeymap
+FONT=ter-v16n
+VCEOF
 
 echo "Locale and timezone configuration complete."
 """)
@@ -192,10 +218,11 @@ function configure_profile_locale(profile_dir, locale, timezone, keyboards)
         println(f, "LANG=C.UTF-8")
     end
 
-    # Write vconsole.conf
+    # Write vconsole.conf (map X11 layout to console keymap)
     vconsole_conf = joinpath(etc_dir, "vconsole.conf")
+    ckeymap = console_keymap(keyboards[1])
     open(vconsole_conf, "w") do f
-        println(f, "KEYMAP=$(keyboards[1])")
+        println(f, "KEYMAP=$ckeymap")
         println(f, "FONT=ter-v16n")
     end
 

@@ -23,6 +23,18 @@ std::string exec(const std::string& cmd) {
     return result;
 }
 
+/// Map X11 keyboard layout names to Linux console (kbd) keymap names.
+/// Layouts not listed here are assumed to match their X11 name.
+std::string console_keymap(const std::string& x11_layout) {
+    if (x11_layout == "kr")    return "us";        // Korean uses US QWERTY at console level
+    if (x11_layout == "cn")    return "us";        // Chinese uses US QWERTY at console level
+    if (x11_layout == "tw")    return "us";        // Taiwanese uses US QWERTY at console level
+    if (x11_layout == "jp")    return "jp106";     // Japanese console keymap
+    if (x11_layout == "latam") return "la-latin1"; // Latin American
+    if (x11_layout == "gb")    return "uk";        // British English
+    return x11_layout;
+}
+
 }  // namespace
 
 Installer::Installer(const Config& config) : config_(config) {}
@@ -587,8 +599,10 @@ bool Installer::configure_locale() {
     write_file(mount_point_ + "/etc/locale.conf", locale_conf);
 
     // Always write vconsole.conf with KEYMAP and FONT
+    // Map X11 layout to console keymap (e.g. "kr" -> "us")
     // Missing FONT causes systemd-vconsole-setup.service to fail at boot
-    std::string keymap = config_.locale.keyboards.empty() ? "us" : config_.locale.keyboards[0];
+    std::string x11_keymap = config_.locale.keyboards.empty() ? "us" : config_.locale.keyboards[0];
+    std::string keymap = console_keymap(x11_keymap);
     std::string vconsole = "KEYMAP=" + keymap + "\nFONT=ter-v16n\n";
     write_file(mount_point_ + "/etc/vconsole.conf", vconsole);
 
@@ -655,6 +669,10 @@ bool Installer::configure_users() {
 
     // Configure SDDM autologin if enabled
     if (config_.install.autologin) {
+        // Create autologin group and add user to it (required by PAM for SDDM autologin)
+        run_chroot("groupadd -rf autologin");
+        run_chroot("usermod -aG autologin " + config_.install.username);
+
         std::string sddm_conf_dir = mount_point_ + "/etc/sddm.conf.d";
         run_command("mkdir -p " + sddm_conf_dir);
 
@@ -1033,6 +1051,28 @@ julia "$SYSCHK_FILE"
         write_file(syschk_script_path, syschk_script);
         run_command("chmod +x " + syschk_script_path);
         tui::print_info("Created ~/syschk.sh - system check script");
+    }
+
+    // ========================================
+    // 4d. Create Easy Install App desktop shortcut
+    // ========================================
+    {
+        std::string desktop_dir = user_home + "/Desktop";
+        run_command("mkdir -p " + desktop_dir);
+
+        std::string appinst_desktop = R"([Desktop Entry]
+Type=Application
+Name=Easy Install App
+Comment=Install additional Blunux apps easily
+Exec=sh -c 'curl -fsSL https://raw.githubusercontent.com/JaewooJoung/linux/main/blunux-appinst.run -o /tmp/blunux-appinst.run && chmod +x /tmp/blunux-appinst.run && sudo /tmp/blunux-appinst.run'
+Icon=system-software-install
+Terminal=true
+Categories=System;PackageManager;
+)";
+        std::string desktop_file_path = desktop_dir + "/blunux-appinst.desktop";
+        write_file(desktop_file_path, appinst_desktop);
+        run_command("chmod +x " + desktop_file_path);
+        tui::print_info("Created Desktop shortcut: Easy Install App");
     }
 
     // ========================================
